@@ -60,7 +60,7 @@
   "4000-worth": "#DASH#&nbsp;4000 collateral is worth",
   "4000-worth-today": "Your Đ&nbsp;4000 collateral, bought one year ago, would be approximately worth this ### amount at today's Dash market price (≈&nbsp;§§§).",
   "JSalert": "Invalid number.",
-  "sharedMNs": "<strong>COMING SOON:</strong> <strong>decentralized</strong> shared masternodes will be possible! <a href=\"https://www.youtube.com/live/cAGZMo-m2x0?t=3619s\" target=\"_blank\">Announcement here.</a> Estimate a <a href=\"§§§\">shared stake of 125 Đ</a> above.",
+  "sharedMNs": "<strong>COMING SOON:</strong> <strong>decentralized</strong> shared masternodes will be possible! <a href=\"https://www.youtube.com/live/cAGZMo-m2x0?t=3619s\" target=\"_blank\">Announcement here.</a><br>Estimate a <a href=\"§§§\">shared stake of 125 Đ</a> below.",
   "mode": "mode",
   "switchdarkmode": "Switch to dark mode",
   "switchlightmode": "Switch to light mode",
