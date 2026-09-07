@@ -383,7 +383,7 @@ foreach ($collateralvalue as $type => $stuff) {
 			</div>
 			<div class="control-row">
 				<label for="timescale"><?php echo $UItext["timescale"]; ?>&nbsp;:</label>
-				<select class="menu" name="timescale" id="timescaleselect" onChange="changetimescale();"><option class="menu" value="yearly"<?php echo $timescaleselected["yearly"]; ?>><?php echo $UItext["yearly"]; ?></option><option class="menu" value="monthly"<?php echo $timescaleselected["monthly"]; ?>><?php echo $UItext["monthly"]; ?></option></select>
+				<select class="menu" name="timescale" id="timescaleselect" onChange="changetimescale();"><option class="menu" value="yearly"<?php if (array_key_exists("yearly", $timescaleselected)) echo $timescaleselected["yearly"]; ?>><?php echo $UItext["yearly"]; ?></option><option class="menu" value="monthly"<?php if (array_key_exists("monthly", $timescaleselected)) echo $timescaleselected["monthly"]; ?>><?php echo $UItext["monthly"]; ?></option></select>
 			</div>
 		</div>
 
@@ -403,6 +403,7 @@ foreach ($collateralvalue as $type => $stuff) {
 				<span class="separator">·</span>
 				<a href="https://reddit.com/r/dashpay/" target="_blank" rel="noopener">Dash Reddit</a>
 			</p>
+			<div class="new">👉 <?php echo str_replace("§§§", (string)"javascript:sharedMN('" . $timescale . "');", $UItext["sharedMNs"]); ?></div>
 		</div>
 
 		<button class="box utility-box share-box" type="button" onClick="sharePage();">
@@ -500,7 +501,7 @@ foreach ($collateralvalue as $type => $stuff) {
 				
 
 			</div>
-				<div class="new">👉 <?php echo str_replace("§§§", (string)"javascript:sharedMN('" . $timescale . "');", $UItext["sharedMNs"]); ?></div>
+			
 		</article>
 
 		
