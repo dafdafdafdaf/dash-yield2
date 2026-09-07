@@ -72,14 +72,8 @@ function partial(fieldId, timescale = "yearly") {
 		else if (!Number.isInteger(newnumber))
 			newnumber = "≈ " + newnumber;
 		thenumber.textContent = newnumber + times;
-		// updated number and earnings
-		// if (timescale == "monthly") {
-		// 	howmuchdash.textContent = (((value / fullcollateral) * howmuchdash.dataset.placeholder) / 12).toFixed(1);
-		// 	howmuchfiat.textContent = (((value / fullcollateral) * howmuchfiat.dataset.placeholder) / 12).toFixed(0);
-		// } else {
-			howmuchdash.textContent = ((value / fullcollateral) * howmuchdash.dataset.placeholder).toFixed(1);
-			howmuchfiat.textContent = ((value / fullcollateral) * howmuchfiat.dataset.placeholder).toFixed(0);
-		// }
+		howmuchdash.innerHTML = thousandsanddecimals(((value / fullcollateral) * howmuchdash.dataset.placeholder).toFixed(1));
+		howmuchfiat.innerHTML = thousandsanddecimals(((value / fullcollateral) * howmuchfiat.dataset.placeholder).toFixed(0));
 		// funky bounces to show it
 		[thenumber, howmuchdash, howmuchfiat].forEach(element => {
 			element.classList.remove('earning-update');
@@ -144,6 +138,14 @@ function sharedMN(timescale) {
 	partial("MN", timescale);
 }
 
+function thousandsanddecimals(number) {
+	return number.toString().replace(
+		/^(-?\d+)([.,]\d+)?$/,
+		(_, integer, decimals = '') =>
+			integer.replace(/\B(?=(\d{3})+(?!\d))/g, '&nbsp;') +
+			(decimals ? `<span class=\"decimals\">${decimals}</span>` : '')
+	);
+}
 
 // Time zone detection =============
 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; // ex: "UTC", "Europe/Paris"
