@@ -204,12 +204,14 @@ if (file_exists("cache/APYhistory.json") and is_numeric($JSON["APY"][$now]["MN"]
 $dashPriceUSD = $JSON["lastPrices"]["USD"]["current"];
 
 foreach ($collateral as $type => $amount) {
-	// Calculation of annual income for a MN and an Evo
+	// Calculation of annual & monthly income for a MN & an Evo
 	$JSON["rewards"]["yearly"][$type]["DASH"] = round(($JSON["APY"][$now][$type] / 100) * $collateral[$type], 8);
+	$JSON["rewards"]["monthly"][$type]["DASH"] = round($JSON["rewards"]["yearly"][$type]["DASH"] / 12, 8);
 	foreach (array_keys($fiatcurrencies) as $fiatcurrency) {
 		$currentfiat = strtoupper($fiatcurrency); 
 		$rate = $JSON["lastPrices"]["conversion_rates"]["now"][$currentfiat] ?? 1.0;
 		$JSON["rewards"]["yearly"][$type][$currentfiat] = round($JSON["rewards"]["yearly"][$type]["DASH"] * $dashPriceUSD * $rate, 0);
+		$JSON["rewards"]["monthly"][$type][$currentfiat] = round($JSON["rewards"]["yearly"][$type][$currentfiat] / 12, 0);
 	}
 	
 	// Simulations over the previous 365 days
