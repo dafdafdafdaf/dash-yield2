@@ -13,6 +13,14 @@ function changelang() {
 	document.cookie = "lang=" + lang + "; expires=" + expires.toUTCString() + "; path=/; SameSite=Lax";
 	window.location.href = window.location.pathname + "?lang=" + lang;
 }
+function changetimescale() {
+	var timescale = document.getElementById("timescaleselect").value;
+	var expires = new Date();
+	expires.setFullYear(expires.getFullYear() + 1);
+	document.cookie = "timescale=" + timescale + "; expires=" + expires.toUTCString() + "; path=/; SameSite=Lax";
+	window.location.href = window.location.pathname + "?timescale=" + timescale;
+}
+
 function sharePage() {
 	const cleanUrl = `${location.origin}${location.pathname}`;
 	if (navigator.share) {
@@ -30,7 +38,7 @@ function sharePage() {
 
 // Partial collateral inputs =============
 const refusalCount = {};
-function partial(fieldId) {
+function partial(fieldId, timescale = "yearly") {
 	const input = document.getElementById('coll-' + fieldId);
 	const rawValue = input.value;
 	const value = Number(rawValue);
@@ -52,8 +60,8 @@ function partial(fieldId) {
 		refusalCount[fieldId] = 0;
 		input.dataset.lastValid = rawValue;
 		const thenumber = document.getElementById(fieldId + "-number");
-		const yearlydash = document.getElementById(fieldId + "-earning");
-		const yearlyfiat = document.getElementById(fieldId + "-fiat-earning");
+		const howmuchdash = document.getElementById(fieldId + "-earning");
+		const howmuchfiat = document.getElementById(fieldId + "-fiat-earning");
 		// updated number of MNs/eMNs
 		var newnumber =  Number((value / fullcollateral).toFixed(1));
 		var times = "";
@@ -65,10 +73,15 @@ function partial(fieldId) {
 			newnumber = "≈ " + newnumber;
 		thenumber.textContent = newnumber + times;
 		// updated number and earnings
-		yearlydash.textContent = ((value / fullcollateral) * yearlydash.dataset.placeholder).toFixed(1);
-		yearlyfiat.textContent = ((value / fullcollateral) * yearlyfiat.dataset.placeholder).toFixed(0);
+		// if (timescale == "monthly") {
+		// 	howmuchdash.textContent = (((value / fullcollateral) * howmuchdash.dataset.placeholder) / 12).toFixed(1);
+		// 	howmuchfiat.textContent = (((value / fullcollateral) * howmuchfiat.dataset.placeholder) / 12).toFixed(0);
+		// } else {
+			howmuchdash.textContent = ((value / fullcollateral) * howmuchdash.dataset.placeholder).toFixed(1);
+			howmuchfiat.textContent = ((value / fullcollateral) * howmuchfiat.dataset.placeholder).toFixed(0);
+		// }
 		// funky bounces to show it
-		[thenumber, yearlydash, yearlyfiat].forEach(element => {
+		[thenumber, howmuchdash, howmuchfiat].forEach(element => {
 			element.classList.remove('earning-update');
 			void element.offsetWidth;
 			element.classList.add('earning-update');
@@ -77,14 +90,13 @@ function partial(fieldId) {
 			}, { once: true });
 		});
 
-
-
 	}
 }
 
 // 1000 or 4000 increments management (using up/down arrow keys)
 document.addEventListener("DOMContentLoaded", () => {
 	['coll-MN', 'coll-Evo'].forEach(id => {
+		const timescale = getCookie("timescale", "yearly");
 		const input = document.getElementById(id);
 		if (!input)
 			return;
@@ -118,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					let newValue = Math.floor((lastValue - 0.1) / stepValue) * stepValue;
 					input.value = Math.max(Number(input.min) || 1, newValue);
 				}
-				partial(id.replace('coll-', '')); 
+				partial(id.replace('coll-', ''), timescale); 
 			}
 			lastValue = Number(input.value);
 		});
@@ -126,6 +138,24 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+// Example of a 125D collateral
+function sharedMN(timescale) {
+	document.getElementById("coll-MN").value = "125";
+	partial("MN", timescale);
+}
+
+
 // Time zone detection =============
 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; // ex: "UTC", "Europe/Paris"
 document.cookie = `user_tz=${tz}; path=/; SameSite=Lax`;
+
+
+// Cookie detection ============
+function getCookie(name, defaultValue = null) {
+	const cookie = document.cookie
+		.split("; ")
+		.find(row => row.startsWith(name + "="));
+	return cookie
+		? decodeURIComponent(cookie.substring(name.length + 1))
+		: defaultValue;
+}
