@@ -4,6 +4,11 @@
 require "configs/config.php";
 
 // Functions ===============
+function version_asset(string $relative_path): string {
+	$absolute_path = __DIR__ . "/" . $relative_path;
+	$version = file_exists($absolute_path) ? filemtime($absolute_path) : time();
+	return $relative_path . "?x=" . $version;
+}
 function pretty(float $number, int $decimals):string {
 	$number = number_format($number, $decimals, ".", "&nbsp;");
 	if (strpos($number, '.') === false)
@@ -201,6 +206,27 @@ else
 $rawJS = file_get_contents("./languages/" . $lang . ".json"); // gets the right JSON language file
 $UItext = json_decode($rawJS, true);
 
+
+// Selected time scale (yearly/monthly) for earnings ===============
+$timescale = "yearly"; // default
+if (isset($_COOKIE["timescale"]) && in_array($_COOKIE["timescale"], array("yearly", "monthly"))) { // cookie
+	$timescale = $_COOKIE["timescale"];
+}
+if (isset($_GET["timescale"]) and in_array($_GET["timescale"], array("yearly", "monthly"))) { // GET, so new cookie
+	$timescale = $_GET["timescale"];
+	setcookie("timescale", $timescale, [
+		"expires"  => time() + 60 * 60 * 24 * 365,
+		"path"     => "/",
+		"samesite" => "Lax",
+	]);
+}
+$timescaleselected[$timescale] = " selected";
+if ($timescale == "monthly")
+	$timescalemention = $UItext["month"];
+else
+	$timescalemention = $UItext["year"];
+
+
 $data=json_decode(exec('php compute.php'),true);
 if (!is_array($data))
 	die("Invalid JSON response (1)");
@@ -232,6 +258,11 @@ foreach ($collateralvalue as $type => $stuff) {
 		$collateralcolour[$type] = "";
 }
 
+
+
+
+
+
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $lang;?>">
@@ -261,9 +292,22 @@ foreach ($collateralvalue as $type => $stuff) {
 		<!-- iOS -->
 		<link rel="apple-touch-icon" href="images/favicons/favicon-128-new.png" sizes="128x128">
 		<link rel="apple-touch-icon" href="images/favicons/favicon-192-new.png" sizes="192x192">
-		<link rel="stylesheet" href="style.css<?php echo $renewCSS; ?>" type="text/css">
-		<link rel="stylesheet" href="style-smartphone.css<?php echo $renewCSS; ?>" type="text/css">
-		<script src="JS/scripts.js<?php echo $renewCSS; ?>"></script>
+		<script>
+		// localStorage.removeItem('dash-yield-theme');
+		(function () {
+			const key = 'dash-yield-theme';
+			const saved = localStorage.getItem(key);
+			const theme = saved || (window.matchMedia &&
+				window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+			// alert(theme);
+			document.documentElement.dataset.theme = theme;
+		})();
+		</script>
+		<link rel="stylesheet" href="<?php echo version_asset("style.css"); ?>" type="text/css">
+		<link rel="stylesheet" href="<?php echo version_asset("style-dark.css"); ?>" type="text/css">
+		<link rel="stylesheet" href="<?php echo version_asset("style-interactions.css"); ?>" type="text/css">
+		<link rel="stylesheet" href="<?php echo version_asset("style-smartphone.css"); ?>" type="text/css">
+		<script src="<?php echo version_asset("JS/scripts.js"); ?>"></script>
 		<script src="JS/tippy/popper2.11.8.js"></script>
 		<script src="JS/tippy/tippy6.3.7.js"></script>
 		<script> const JSalert = "<?php echo $UItext["JSalert"]; ?>"; </script>
@@ -271,233 +315,360 @@ foreach ($collateralvalue as $type => $stuff) {
 	
 <body>
 
-<table><tr>
+<div id="visitAnimation" class="visit-animation" hidden aria-hidden="true">
+	<img src="images/animation.svg" alt="" class="visit-animation-svg">
+</div>
+
+
+<img class="corner-art" src="images/Dash-yield-corner.png" alt="" aria-hidden="true">
+
+<main class="page-shell">
+
+	<header class="page-header">
 	
-<td class="title">
+		<section class="brand-panel">
+			<a class="refresh brand-link" href="./">
+				<span class="banner">LIVE</span>
+				<img src="images/dash_digitalcash.png"
+					 alt="<?php echo $UItext["Dash-yield"] . " - " . $UItext["MN-Evo-earnings"]; ?>"
+					 title="<?php echo $UItext["Dash-yield"] . " - " . $UItext["MN-Evo-earnings"] ; ?>"
+					 class="logo">
+				<span class="subbrand">yield</span>
+			</a>
+			<div class="brand-tagline"><?php echo $UItext["MN-Evo-earnings-b"]; ?></div>
+		</section>
 
-<!-- TITLE box ================================= -->
-<div class="box title">
+		<section class="intro-panel">
+			<p class="small intro-text">
+				<?php echo str_replace("###", (string) floor((time() - strtotime("2014-01-18 00:00:00")) / (365 * 24 * 60 * 60)), boldify($UItext["proven-crypto"], "Roboto")); ?>
+				<?php echo boldify($UItext["servers"], "Roboto"); ?>
+			</p>
+			<p class="small intro-links">
+			<?php echo $UItext["learn-more"]; ?><a href="https://www.dash.org/<?php echo $dashorglang; ?>/" target="_blank"><span class="Roboto-bold"><b>Dash</b></span></a> &amp; <a href="https://docs.dash.org/<?php echo $docsdashlang;?>/stable/docs/user/masternodes/" target="_blank"><span class="Roboto-bold"><b><?php echo $UItext["MN-Evo"]; ?></b></span></a>.
+			</p>
+		</section>
 
-	<a class="refresh" href="./">
-		<div class="banner">LIVE</div>
+		<section class="meta-panel">
+			<p class="smaller">
+				<?php echo str_replace("###", "<span class=\"Roboto-bold\">" . $fmt->format(time()) . "</span>", $UItext["page-refreshed"]) . $timezonemention; ?>.
+			</p>
+			<p class="smaller">
+				<?php echo $UItext["approx"]; ?> <a href="#" data-tippy-content="“Do Your Own Research”.<br>(<?php echo $UItext["DYOR"]; ?>)"><b>DYOR</b>.</a> <?php echo str_replace("###", (string) boldify($UItext["disclaimer"], ""), $UItext["disclaimer-link"]); ?>
+			</p>
+			<p class="smaller hint"><?php echo $UItext["hover-any"]; ?></p>
+			<div class="theme-toggle">
+				<label for="themeToggle"><?php echo $UItext["mode"]; ?>&nbsp;:</label>
+				<button type="button" id="themeToggle" class="theme-toggle-button"
+					aria-pressed="false" aria-label="<?php echo $UItext["switchdarkmode"]; ?>">
+					<span class="theme-icon" aria-hidden="true">☾</span>
+					<span class="theme-toggle-text"><?php echo $UItext["nightmode"]; ?></span>
+				</button>
+			</div>
+		</section>
+
+	</header>
+
+	<section class="utility-row">
+
+		<!-- SETTINGS box ================================= -->
+		<div class="box utility-box">
+			<div class="subtitle subsubtitle"><span class="bold">⚙️</span> <?php echo $UItext["settings"]; ?></div>
+			<div class="control-row">
+				<label for="fiatselect"><?php echo $UItext["fiat"]; ?>&nbsp;:</label>
+				<select class="menu" name="fiat" id="fiatselect" onChange="changefiat();"><?php echo implode("", $fiatoptions); ?></select>
+			</div>
+			<div class="control-row">
+				<label for="langselect"><?php echo $UItext["language"]; ?>&nbsp;:</label>
+				<select class="menu" name="lang" id="langselect" onChange="changelang();"><?php echo implode("", $langoptions); ?></select>
+			</div>
+			<div class="control-row">
+				<label for="timescale"><?php echo $UItext["timescale"]; ?>&nbsp;:</label>
+				<select class="menu" name="timescale" id="timescaleselect" onChange="changetimescale();"><option class="menu" value="yearly"<?php echo $timescaleselected["yearly"]; ?>><?php echo $UItext["yearly"]; ?></option><option class="menu" value="monthly"<?php echo $timescaleselected["monthly"]; ?>><?php echo $UItext["monthly"]; ?></option></select>
+			</div>
+		</div>
+
+		<!-- LINKS box ================================= -->
+		<div class="box utility-box">
+			<div class="subtitle subsubtitle"><span class="bold">👋</span> <?php echo $UItext["info-help"]; ?></div>
+			<p class="small utility-links">
+				<a href="https://www.dash.org/<?php echo $dashorglang;?>/" target="_blank" rel="noopener"><span class="Roboto-bold"><b>Dash.org</b></span></a>
+				<span class="separator">·</span>
+				<a href="https://docs.dash.org/<?php echo $docsdashlang; ?>/stable/docs/user/masternodes/" target="_blank" rel="noopener">masternodes &amp; Evonodes</a>
+				<span class="separator">·</span>
+				<a href="https://discordapp.com/invite/PXbUxJB" target="_blank" rel="noopener"><span class="Roboto-bold"><b>Dash Discord</b></span></a>
+				<span class="separator">·</span>
+				<a href="https://twitter.com/Dashpay" target="_blank" rel="noopener">Dash X</a>
+				<span class="separator">·</span>
+				<a href="https://www.dash.org/forum/" target="_blank" rel="noopener">Dash forum</a>
+				<span class="separator">·</span>
+				<a href="https://reddit.com/r/dashpay/" target="_blank" rel="noopener">Dash Reddit</a>
+			</p>
+		</div>
+
+		<button class="box utility-box share-box" type="button" onClick="sharePage();">
+			<span>🔗 <?php echo $UItext["share"]; ?> ⤴️</span>
+		</button>
+
+	</section>
+
+	<section class="dashboard">
+
+	<!-- MARKET PRICE box ================================= -->
+		<article class="box metric-card market-card boxborder boxunfold">
+			<div class="subtitle">
+				<span class="bold">📊</span>&nbsp;&nbsp;<?php echo $UItext["market-price"]; ?>
+				<div class="bubble" data-tippy-content="<?php echo $UItext["provided-CoinGecko"]; ?>, <?php echo $fmt->format($data["lastPrices"]["USD"]["time"]["timestamp"]); ?>.<br>(<?php echo $UItext["provided-Frankfurter"]; ?>, <?php echo $fmt->format($data["lastPrices"]["conversion_rates"]["now"]["time"]["timestamp"]); ?>.)">
+					<?php echo $UItext["today"]; ?> <span class="info">ℹ️</span>
+				</div>
+			</div>
+			<div class="metric-value">
+				<span class="blue bigger bold"><b><?php echo pretty($currentprice[$fiat], 2) . "</b></span> " . $fiatcurrencies[$fiat]["symbol"]; ?> / <img alt="Đ" src="images/black-d-250.png" class="D dash-logo">
+				<?php echo $pricealert; ?>
+			</div>
+		</article>
+
+		<!-- YEARLY / MONTHLY EARNINGS box ================================= -->
+		<article class="box metric-card yearly-card boxborder boxunfold">
+			<div class="subtitle">
+				<span class="bold">🗓️</span>&nbsp;&nbsp;<?php echo $UItext[$timescale . "-earnings"]; ?></span>
+				<div class="bubble" data-tippy-content="<?php echo $UItext["XKCD-functions"]; ?>">
+					<?php echo $UItext["today"]; ?> <span class="info">ℹ️</span>
+				</div>
+			</div>
+
+			<!-- 1 Masternode ============ -->
+			<div class="node-grid">
+
+				<section class="node-card" data-tippy-content="<?php echo $UItext["MN-collateral"]; ?>" data-tippy-placement="top-start">
+					<div class="node-title">
+						<span class="bold"><b><span id="MN-number">1</span> Masternode</b></span>
+						<span class="node-setting" data-tippy-content="<?php echo $UItext["MN-collateral-edit"]; ?>" data-tippy-placement="bottom"><?php echo $UItext["collateral"]; ?> <img alt="Đ" src="images/black-d-250.png" class="D dash-logo">
+							<input id="coll-MN" type="number" value="1000" min="1" step="any" placeholder="1000" data-last-valid="1000" class="partial" onInput="partial('MN', '<?php echo $timescale; ?>');">
+							<span class="info">ℹ️</span>
+						</span>
+					</div>
+					<div class="result-line">
+						<span class="arrow">→</span>
+						<span class="green"><span class="about">≈</span>&nbsp;<?php echo pretty($APY["MN"], 2); ?> %</span>
+						<span class="arrow">→</span>
+						<span class="about">≈</span>&nbsp;<img alt="Đ" src="images/black-d-250.png" class="D dash-logo">
+						<span id="MN-earning" class="quitebold" data-placeholder="<?php echo $data["rewards"][$timescale]["MN"]["DASH"]; ?>"><?php echo pretty($data["rewards"][$timescale]["MN"]["DASH"], 1) ; ?></span>
+						<span class="peryear">&nbsp;/&nbsp;<?php echo $timescalemention; ?></span>
+						<div class="bubble" data-tippy-content="<?php echo boldify($UItext["MN-varying"], ""); ?>" data-tippy-placement="bottom">
+							<?php echo $UItext["percent-stable"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+					<div class="result-note">
+						<span class="arrow">↪︎</span>
+						<?php echo $UItext["worth"]; ?> <span class="about">≈</span>&nbsp;<span class="quitebold"><?php echo $fiatcurrencies[$fiat]["symbol"]; ?> <span id="MN-fiat-earning" data-placeholder="<?php echo $data["rewards"][$timescale]["MN"][$fiat]; ?>"><?php echo pretty(round($data["rewards"][$timescale]["MN"][$fiat], 0), 0); ?></span></span>
+						<span class="peryear">&nbsp;/&nbsp;<?php echo $timescalemention; ?></span>
+						<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), boldify($UItext["MN-1-year-simulation"], "") ); ?>" data-tippy-placement="bottom">
+							<?php echo $UItext["price-stable"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+				</section>
+
+				<!-- 1 Evonode ============ -->
+				<section class="node-card" data-tippy-content="<?php echo $UItext["Evo-collateral"]; ?>" data-tippy-placement="top-start">
+					<div class="node-title">
+						<span class="bold"><b><span id="Evo-number">1</span> Evonode</b></span>
+						<span class="node-setting" data-tippy-content="<?php echo $UItext["Evo-collateral-edit"]; ?>" data-tippy-placement="bottom"><?php echo $UItext["collateral"]; ?> <img alt="Đ" src="images/black-d-250.png" class="D dash-logo">
+							<input id="coll-Evo" type="number" value="4000" min="1" step="any" placeholder="4000" data-last-valid="4000" class="partial" onInput="partial('Evo', '<?php echo $timescale; ?>');">
+							<span class="info">ℹ️</span>
+						</span>
+					</div>
+					<div class="result-line">
+						<span class="arrow">→</span>
+						<span class="green"><span class="about">≈</span>&nbsp;<?php echo pretty($APY["Evo"], 2); ?> %</span>
+						<span class="arrow">→</span>
+						<span class="about">≈</span>&nbsp;<img alt="Đ" src="images/black-d-250.png" class="D dash-logo">
+						<span id="Evo-earning" class="quitebold" data-placeholder="<?php echo $data["rewards"][$timescale]["Evo"]["DASH"]; ?>"><?php echo pretty($data["rewards"][$timescale]["Evo"]["DASH"], 1) ; ?></span>
+						<span class="peryear">&nbsp;/&nbsp;<?php echo $timescalemention; ?></span>
+						<div class="bubble" data-tippy-content="<?php echo boldify($UItext["Evo-varying"], ""); ?>" data-tippy-placement="bottom">
+								<?php echo $UItext["percent-stable"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+					<div class="result-note">
+						<span class="arrow">↪︎</span>
+						<?php echo $UItext["worth"]; ?> <span class="about">≈</span>&nbsp;<span class="quitebold"><?php echo $fiatcurrencies[$fiat]["symbol"]; ?> <span id="Evo-fiat-earning" data-placeholder="<?php echo $data["rewards"][$timescale]["Evo"][$fiat]; ?>"><?php echo pretty(round($data["rewards"][$timescale]["Evo"][$fiat], 0), 0); ?></span></span>
+						<span class="peryear">&nbsp;/&nbsp;<?php echo $timescalemention; ?></span>
+						<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), boldify($UItext["Evo-1-year-simulation"], "")); ?>" data-tippy-placement="bottom">
+							<?php echo $UItext["price-stable"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+				</section>
+				
+
+			</div>
+				<div class="new">👉 <?php echo str_replace("§§§", (string)"javascript:sharedMN('" . $timescale . "');", $UItext["sharedMNs"]); ?></div>
+		</article>
+
 		
-		<img src="images/dash_digitalcash.png" alt="<?php echo $UItext["Dash-yield"] . " - " . $UItext["MN-Evo-earnings"]; ?>" title="<?php echo $UItext["Dash-yield"] . " - " . $UItext["MN-Evo-earnings"] ; ?>" class="logo">
-		<span class="subbrand">yield</span>
-	</a>
-	<br><span class="blue"><?php echo $UItext["MN-Evo-earnings-b"]; ?></span>
-	<p class="small">
-		<?php echo str_replace("###", (string) floor((time() - strtotime("2014-01-18 00:00:00")) / (365 * 24 * 60 * 60)), boldify($UItext["proven-crypto"], "Roboto")); ?>
-		<br><?php echo boldify($UItext["servers"], "Roboto"); ?>
-		<br><?php echo $UItext["learn-more"]; ?><a href="https://www.dash.org/<?php echo $dashorglang; ?>/" target="_blank"><span class="Roboto-bold"><b>Dash</b></span></a> &amp; <a href="https://docs.dash.org/<?php echo $docsdashlang;?>/stable/docs/user/masternodes/" target="_blank"><span class="Roboto-bold"><b><?php echo $UItext["MN-Evo"]; ?></b></span></a>.
-	</p>
-	<p class="smaller">
-		<br><?php echo str_replace("###", "<span class=\"Roboto-bold\">" . $fmt->format(time()) . "</span>", $UItext["page-refreshed"]) . $timezonemention; ?>.
-		<br><?php echo $UItext["approx"]; ?> <a href="#" data-tippy-content="“Do Your Own Research”.<br>(<?php echo $UItext["DYOR"]; ?>)">DYOR.</a> <?php echo str_replace("###", (string) boldify($UItext["disclaimer"], ""), $UItext["disclaimer-link"]); ?>
-		<br><span class="Roboto-bold"><b><?php echo $UItext["hover-any"]; ?></b></span>
-	</p>
+		<!-- ONE-YEAR-AGO SIMULATION box ================================= -->
+		<article class="box historical-card boxborder boxunfold">
+			<div class="subtitle">
+				<span class="bold">🧮</span>&nbsp;&nbsp;“<?php echo str_replace("<br>", "", $UItext["earnings-1-year-ago"]); ?>”
+				<div class="bubble" data-tippy-content="<?php echo $UItext["way-to-estimate"]; ?>">
+					<span class="info">ℹ️</span>
+				</div>
+			</div>
+
+			<!-- 1 Masternode ============ -->
+			<div class="history-grid">
+
+				<section class="history-node">
+					<h3><span class="bold">1 Masternode</span></h3>
+
+					<div class="history-line">
+						<span class="arrow">→</span>
+						<?php echo $UItext["I-bought"]; ?> <?php echo str_replace("#DASH#", (string)"<img alt=\"Đ\" src=\"images/black-d-250.png\" class=\"D dash-logo\">", $UItext["1000-collateral"]); ?>
+						<?php echo "<span class=\"about\">≈</span>&nbsp;" . $fiatcurrencies[$fiat]["symbol"] . " " . pretty($collateralvalue["MN"][$fiat]["365d"], 0); ?>
+						<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§", "@@@"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($past365dprice[$fiat], 2), $daysago365), $UItext["approx-MN-collateral-1-year-ago"]); ?>">
+							<?php echo $UItext["1-year-ago"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+
+					<div class="history-line indented">
+						<span class="arrow">↪︎</span>
+						<?php echo $UItext["then-earned"]; ?> <span class="about">≈</span>&nbsp;
+						<span class="green"><img alt="Đ" src="images/black-d-250.png" class="D dash-logo"> <?php echo pretty($data["simulationpast365d"]["rewardspast365d"]["MN"]["DASH365d"], 1); ?></span>
+						<div class="bubble" data-tippy-content="<?php echo str_replace("###", (string)$data["simulationpast365d"]["rewardspast365d"]["MN"]["APY365d"], $UItext["MN-approx-APY"]); ?>">
+							<?php echo $UItext["during-365-days"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+
+					<div class="history-line indented">
+						<span class="arrow">→</span>
+						<?php echo $UItext["worth"]; ?> <span class="about">≈</span>&nbsp;<span class="green"><?php echo $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . pretty(round($data["simulationpast365d"]["rewardspast365d"]["MN"][$fiat], 0), 0); ?></span>
+						<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), $UItext["MN-approx-earnings-1-year"]); ?>" data-tippy-placement="bottom">
+							<?php echo $UItext["today"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+
+					<div class="history-line">
+						<span class="arrow">↪︎</span>
+						<i><?php echo $UItext["whereas-my"]; ?> <?php echo str_replace("#DASH#", (string)"<img alt=\"Đ\" src=\"images/black-d-250.png\" class=\"D dash-logo\">", $UItext["1000-worth"]); ?>
+							<span class="about">≈</span>&nbsp;<?php echo "<span class=\"" . $collateralcolour["MN"] . "\">" . $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . pretty($collateralvalue["MN"][$fiat]["current"], 0); ?></span></i>
+						<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), $UItext["1000-worth-today"]); ?>" data-tippy-placement="bottom">
+							<?php echo $UItext["today"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+				</section>
+
+				<!-- 1 Evonode ============ -->
+				<section class="history-node">
+					<h3><span class="bold">1 Evonode</span></h3>
+
+					<div class="history-line">
+						<span class="arrow">→</span>
+						<?php echo $UItext["I-bought"]; ?> <?php echo str_replace("#DASH#", (string)"<img alt=\"Đ\" src=\"images/black-d-250.png\" class=\"D dash-logo\">", $UItext["4000-collateral"]); ?>
+						<?php echo "<span class=\"about\">≈</span>&nbsp;" . $fiatcurrencies[$fiat]["symbol"] . " " . pretty($collateralvalue["Evo"][$fiat]["365d"], 0); ?>
+						<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§", "@@@"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($past365dprice[$fiat], 2), $daysago365), $UItext["approx-Evo-collateral-1-year-ago"]); ?>">
+							<?php echo $UItext["1-year-ago"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+
+					<div class="history-line indented">
+						<span class="arrow">↪︎</span>
+						<?php echo $UItext["then-earned"]; ?> <span class="about">≈</span>&nbsp;
+						<span class="green"><img alt="Đ" src="images/black-d-250.png" class="D dash-logo"> <?php echo pretty($data["simulationpast365d"]["rewardspast365d"]["Evo"]["DASH365d"], 1); ?></span>
+						<div class="bubble" data-tippy-content="<?php echo str_replace("###", (string)$data["simulationpast365d"]["rewardspast365d"]["Evo"]["APY365d"], $UItext["Evo-approx-APY"]); ?>">
+							<?php echo $UItext["during-365-days"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+
+					<div class="history-line indented">
+						<span class="arrow">→</span>
+						<?php echo $UItext["worth"]; ?> <span class="about">≈</span>&nbsp;<span class="green"><?php echo $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . pretty(round($data["simulationpast365d"]["rewardspast365d"]["Evo"][$fiat], 0), 0); ?></span>
+						<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), $UItext["Evo-approx-earnings-1-year"]); ?>" data-tippy-placement="bottom">
+							<?php echo $UItext["today"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+
+					<div class="history-line">
+						<span class="arrow">↪︎</span>
+						<i><?php echo $UItext["whereas-my"]; ?> <?php echo str_replace("#DASH#", (string)"<img alt=\"Đ\" src=\"images/black-d-250.png\" class=\"D dash-logo\">", $UItext["4000-worth"]); ?>
+							<span class="about">≈</span>&nbsp;<?php echo "<span class=\"" . $collateralcolour["Evo"] . "\">" . $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . pretty($collateralvalue["Evo"][$fiat]["current"], 0); ?></span></i>
+						<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), $UItext["4000-worth-today"]); ?>" data-tippy-placement="bottom">
+							<?php echo $UItext["today"]; ?> <span class="info">ℹ️</span>
+						</div>
+					</div>
+				</section>
+
+			</div>
+		</article>
+
+	</section>
+
+</main>
+
+<script>
+(function () {
+	'use strict';
+
+	const THEME_KEY = 'dash-yield-theme';
+	const VISIT_KEY = 'dash-yield-last-visit';
+	const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+
+	const root = document.documentElement;
+	const toggle = document.getElementById('themeToggle');
+	const toggleIcon = toggle ? toggle.querySelector('.theme-icon') : null;
+	const toggleText = toggle ? toggle.querySelector('.theme-toggle-text') : null;
+
+	function setTheme(theme, persist) {
+		const isDark = theme === 'dark';
+		root.dataset.theme = isDark ? 'dark' : 'light';
+
+		if (persist) {
+			localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
+		}
+
+		if (toggle) {
+			toggle.setAttribute('aria-pressed', String(isDark));
+			toggle.setAttribute(
+				'aria-label',
+				isDark ? '<?php echo $UItext["switchlightmode"]; ?>' : '<?php echo $UItext["switchdarkmode"]; ?>'
+			);
+		}
+		if (toggleIcon) toggleIcon.textContent = isDark ? '☀' : '☾';
+		if (toggleText) toggleText.textContent = isDark ? '<?php echo $UItext["daymode"]; ?>' : '<?php echo $UItext["nightmode"]; ?>';
+	}
+
+	/* The inline script in <head> already selected the initial theme:
+	   explicit visitor choice > OS preference > light. */
+	setTheme(root.dataset.theme || 'light', false);
+
+	if (toggle) {
+		toggle.addEventListener('click', function () {
+			setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark', true);
+		});
+	}
+
+	/* Show the intro animation only for a first visit, or after >48 h.
+	   localStorage is deliberately used: a returning visitor on the same
+	   browser/device keeps their visit timestamp. */
+	const now = Date.now();
+	const previousVisit = Number(localStorage.getItem(VISIT_KEY) || 0);
+
+	const WORK_MODE = false;
 	
-	<!-- SETTINGS box ================================= -->
-	<div class="box boxborder boxsmall">
-		<div class="subtitle subsubtitle"><span class="bold">⚙️</span> <?php echo $UItext["settings"]; ?></div>
-		<?php echo $UItext["fiat"]; ?>&nbsp;: <select class="menu" name="fiat" id="fiatselect" onChange="changefiat();"><?php echo implode("", $fiatoptions); ?></select>
-		<br>
-		<?php echo $UItext["language"]; ?>&nbsp;: <select class="menu" name="lang" id="langselect" onChange="changelang();"><?php echo implode("", $langoptions); ?></select>
-	</div>
+	const shouldShow = WORK_MODE
+		? true
+		: (!previousVisit || (now - previousVisit > FORTY_EIGHT_HOURS));
+	localStorage.setItem(VISIT_KEY, String(now));
 
-	<!-- LINKS box ================================= -->
-	<div class="box boxborder boxsmall">
-		<div class="subtitle subsubtitle"><span class="bold">👋</span> <?php echo $UItext["info-help"]; ?></div>
-		<p class="small">
-			<a href="https://www.dash.org/<?php echo $dashorglang;?>/" target="_blank"><span class="Roboto-bold"><b>Dash.org</b></span></a> | <a href="https://docs.dash.org/<?php echo $docsdashlang; ?>/stable/docs/user/masternodes/" target="_blank">masternodes &amp; Evonodes</a> | <a href="https://discordapp.com/invite/PXbUxJB" target="_blank"><span class="Roboto-bold"><b>Dash Discord</b></span></a> | <a href="https://twitter.com/Dashpay" target="_blank">Dash X</a> | <a href="https://www.dash.org/forum/" target="_blank">Dash forum</a> | <a href="https://reddit.com/r/dashpay/" target="_blank">Dash Reddit</a>
-		</p>
-	</div>
-	
-	<div class="box boxborder boxsmall" style="cursor: pointer;" onClick="sharePage();">
-		<p class="small">🔗 <?php echo $UItext["share"]; ?> ⤴️</p>
-	</div>
+	const animation = document.getElementById('visitAnimation');
+	if (shouldShow && animation) {
+		animation.hidden = false;
 
-</div> <!-- end of title box -->
-
-</td>
-
-<td class="stuff">
-
-<!-- MARKET PRICE box ================================= -->
-<div class="box boxborder boxunfold">
-	<div class="subtitle"><span class="bold">📊</span>&nbsp;&nbsp;<?php echo $UItext["market-price"]; ?>
-		<div class="bubble" data-tippy-content="<?php echo $UItext["provided-CoinGecko"]; ?>, <?php echo $fmt->format($data["lastPrices"]["USD"]["time"]["timestamp"]); ?>.<br>(<?php echo $UItext["provided-Frankfurter"]; ?>, <?php echo $fmt->format($data["lastPrices"]["conversion_rates"]["now"]["time"]["timestamp"]); ?>.)">
-			<?php echo $UItext["today"]; ?>
-			<span class="info">ℹ️</span>
-		</div>
-	</div>
-	<span class="subblock">
-		<span class="blue bigger bold"><span class="bold"><b><?php echo pretty($currentprice[$fiat], 2) . "</b></span></span> " . $fiatcurrencies[$fiat]["symbol"]; ?> / <img alt="Đ" src="images/black-d-250.png" class="D">
-		<?php echo $pricealert; ?>
-	</span>
-</div>
-
-<!-- YEARLY EARNINGS box ================================= -->
-<div class="box boxborder boxyearnings boxunfold" style="animation-duration: 1.7s;">
-	<div class="subtitle"><span class="bold">🗓️</span>&nbsp;&nbsp;<?php echo $UItext["yearly-earnings"]; ?></span>
-		<div class="bubble" data-tippy-content="<?php echo $UItext["XKCD-functions"]; ?>">
-			<?php echo $UItext["today"]; ?>
-			<span class="info">ℹ️</span>
-		</div>
-		<img src="images/Dash-yield.png" class="tree">
-	</div>
-
-	<!-- 1 Masternode ============ -->
-	<div class="subblock" data-tippy-content="<?php echo $UItext["MN-collateral"]; ?>">
-		<span class="bold"><b><span id="MN-number">1</span> Masternode</b></span>, <?php echo $UItext["collateral"]; ?> 
-		<img alt="Đ" src="images/black-d-250.png" class="D">
-		<input id="coll-MN" type="number" value="1000" min="1" step="any" placeholder="1000" data-last-valid="1000" class="partial" onInput="partial('MN');" data-tippy-content="<?php echo $UItext["MN-collateral-edit"]; ?>" data-tippy-placement="bottom">
-		<span class="info">ℹ️</span>
-	</div>
-	<div class="subblock">
-		<span class="arrow newline">→</span> 
-		<span class="green"><span class="about">≈</span>&nbsp;<?php echo pretty($APY["MN"], 2); ?> %</span> 
-		<span class="arrow">→</span> 
-		<span class="about">≈</span>&nbsp;<img alt="Đ" src="images/black-d-250.png" class="D"> 
-		<span id="MN-earning" data-placeholder="<?php echo $data["rewards"]["yearly"]["MN"]["DASH"]; ?>"><?php echo pretty($data["rewards"]["yearly"]["MN"]["DASH"], 1) ; ?></span><span class="peryear">&nbsp;/&nbsp;<?php echo $UItext["year"]; ?></span>
-		<div class="bubble" data-tippy-content="<?php echo boldify($UItext["MN-varying"], ""); ?>">
-				<?php echo $UItext["percent-stable"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	<div class="subblock right">
-		<span class="arrow">↪︎</span> 
-		<?php echo $UItext["worth"]; ?> <span class="about">≈</span>&nbsp;<?php echo $fiatcurrencies[$fiat]["symbol"]; ?> <span id="MN-fiat-earning" data-placeholder="<?php echo $data["rewards"]["yearly"]["MN"][$fiat]; ?>"><?php echo pretty(round($data["rewards"]["yearly"]["MN"][$fiat], 0), 0); ?></span><span class="peryear">&nbsp;/&nbsp;<?php echo $UItext["year"]; ?></span>
-		<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), boldify($UItext["MN-1-year-simulation"], "") ); ?>">
-				<?php echo $UItext["price-stable"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	
-	<hr>
-	
-	<!-- 1 Evonode ============ -->
-	<div class="subblock" data-tippy-content="<?php echo $UItext["Evo-collateral"]; ?>">
-		<span class="bold"><b><span id="Evo-number">1</span> Evonode</b></span>, <?php echo $UItext["collateral"]; ?> 
-		<img alt="Đ" src="images/black-d-250.png" class="D">
-		<input id="coll-Evo" type="number" value="4000" min="1" step="any" placeholder="4000" data-last-valid="4000" class="partial" onInput="partial('Evo');" data-tippy-content="<?php echo $UItext["Evo-collateral-edit"]; ?>" data-tippy-placement="bottom">
-		<span class="info">ℹ️</span>
-	</div>
-	<div class="subblock">
-		<span class="arrow newline">→</span> 
-		<span class="green"><span class="about">≈</span>&nbsp;<?php echo pretty($APY["Evo"], 2); ?> %</span> 
-		<span class="arrow">→</span> 
-		<span class="about">≈</span>&nbsp;<img alt="Đ" src="images/black-d-250.png" class="D"> 
-		<span id="Evo-earning" data-placeholder="<?php echo $data["rewards"]["yearly"]["Evo"]["DASH"]; ?>"><?php echo pretty($data["rewards"]["yearly"]["Evo"]["DASH"], 1) ; ?></span><span class="peryear">&nbsp;/&nbsp;<?php echo $UItext["year"]; ?></span>
-		<div class="bubble" data-tippy-content="<?php echo boldify($UItext["Evo-varying"], ""); ?>">
-				<?php echo $UItext["percent-stable"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	<div class="subblock right">
-		<span class="arrow">↪︎</span> 
-		<?php echo $UItext["worth"]; ?> <span class="about">≈</span>&nbsp;<?php echo $fiatcurrencies[$fiat]["symbol"]; ?> <span id="Evo-fiat-earning" data-placeholder="<?php echo $data["rewards"]["yearly"]["Evo"][$fiat]; ?>"><?php echo pretty(round($data["rewards"]["yearly"]["Evo"][$fiat], 0), 0); ?></span><span class="peryear">&nbsp;/&nbsp;<?php echo $UItext["year"]; ?></span>
-		<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), boldify($UItext["Evo-1-year-simulation"], "")); ?>">
-				<?php echo $UItext["price-stable"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-</div>
-
-
-<!-- ONE-YEAR-AGO SIMULATION box ================================= -->
-<div class="box boxborder boxunfold" style="animation-duration: 2s;">
-	<div class="subtitle"><span class="bold">🧮</span>&nbsp;&nbsp;“<?php echo $UItext["earnings-1-year-ago"]; ?>”
-		<div class="bubble" data-tippy-content="<?php echo $UItext["way-to-estimate"]; ?>">
-			<span class="info">ℹ️</span>
-		</div>
-	</div>
-	
-	<!-- 1 Masternode ============ -->
-	<span class="subblock">
-		<span class="bold"><b>1 Masternode</b></span>
-	</span>
-	<div class="subblock">
-		<span class="arrow newline">→</span> 
-		<?php echo $UItext["I-bought"]; ?> <?php echo str_replace("#DASH#", (string)"<img alt=\"Đ\" src=\"images/black-d-250.png\" class=\"D\">", $UItext["1000-collateral"]); ?>
-		<?php echo "<span class=\"about\">≈</span>&nbsp;" . $fiatcurrencies[$fiat]["symbol"] . " " . pretty($collateralvalue["MN"][$fiat]["365d"], 0); ?>
-		<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§", "@@@"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($past365dprice[$fiat], 2), $daysago365), $UItext["approx-MN-collateral-1-year-ago"]); ?>">
-				<?php echo $UItext["1-year-ago"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	<br class="flat">
-	<div class="subblock left">
-		<span class="arrow indentright">↪︎</span>
-		<?php echo $UItext["then-earned"]; ?> <span class="about">≈</span>&nbsp;<span class="green"><img alt="Đ" src="images/black-d-250.png" class="D"> <?php echo pretty($data["simulationpast365d"]["rewardspast365d"]["MN"]["DASH365d"], 1); ?></span> 
-		<div class="bubble" data-tippy-content="<?php echo str_replace("###", (string)$data["simulationpast365d"]["rewardspast365d"]["MN"]["APY365d"], $UItext["MN-approx-APY"]); ?>">
-				<?php echo $UItext["during-365-days"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	<div class="subblock">
-		<span class="arrow newline">→</span> 
-		<?php echo $UItext["worth"]; ?> <span class="about">≈</span>&nbsp;<span class="green"><?php echo $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . pretty(round($data["simulationpast365d"]["rewardspast365d"]["MN"][$fiat], 0), 0); ?></span>
-		<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), $UItext["MN-approx-earnings-1-year"]); ?>">
-				<?php echo $UItext["today"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	<br class="flat">
-	<div class="subblock left">
-		<span class="arrow indentright">↪︎</span>
-		<i><?php echo $UItext["whereas-my"]; ?> <?php echo str_replace("#DASH#", (string)"<img alt=\"Đ\" src=\"images/black-d-250.png\" class=\"D\">", $UItext["1000-worth"]); ?> <span class="about">≈</span>&nbsp;<?php echo "<span class=\"" . $collateralcolour["MN"] . "\">" . $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . pretty($collateralvalue["MN"][$fiat]["current"], 0); ?></span></i>
-		<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), $UItext["1000-worth-today"]); ?>">
-				<?php echo $UItext["today"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	
-	<hr>
-	
-	<!-- 1 Evonode ============ -->
-	<span class="subblock">
-		<span class="bold"><b>1 Evonode</b></span>
-	</span>
-	<div class="subblock">
-		<span class="arrow newline">→</span> 
-		<?php echo $UItext["I-bought"]; ?> <?php echo str_replace("#DASH#", (string)"<img alt=\"Đ\" src=\"images/black-d-250.png\" class=\"D\">", $UItext["4000-collateral"]); ?> 
-		<?php echo "<span class=\"about\">≈</span>&nbsp;" . $fiatcurrencies[$fiat]["symbol"] . " " . pretty($collateralvalue["Evo"][$fiat]["365d"], 0); ?>
-		<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§", "@@@"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($past365dprice[$fiat], 2), $daysago365), $UItext["approx-Evo-collateral-1-year-ago"]); ?>">
-				<?php echo $UItext["1-year-ago"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	<br class="flat">
-	<div class="subblock left">
-		<span class="arrow indentright">↪︎</span>
-		<?php echo $UItext["then-earned"]; ?> <span class="about">≈</span>&nbsp;<span class="green"><img alt="Đ" src="images/black-d-250.png" class="D"> <?php echo pretty($data["simulationpast365d"]["rewardspast365d"]["Evo"]["DASH365d"], 1); ?></span> 
-		<div class="bubble" data-tippy-content="<?php echo str_replace("###", (string)$data["simulationpast365d"]["rewardspast365d"]["Evo"]["APY365d"], $UItext["Evo-approx-APY"]); ?>">
-				<?php echo $UItext["during-365-days"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	<div class="subblock">
-		<span class="arrow newline">→</span> 
-		<?php echo $UItext["worth"]; ?> <span class="about">≈</span>&nbsp;<span class="green"><?php echo $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . pretty(round($data["simulationpast365d"]["rewardspast365d"]["Evo"][$fiat], 0), 0); ?></span>
-		<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), $UItext["Evo-approx-earnings-1-year"]); ?>">
-				<?php echo $UItext["today"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-	<br class="flat">
-	<div class="subblock left">
-		<span class="arrow indentright">↪︎</span>
-		<i><?php echo $UItext["whereas-my"]; ?> <?php echo str_replace("#DASH#", (string)"<img alt=\"Đ\" src=\"images/black-d-250.png\" class=\"D\">", $UItext["4000-worth"]); ?> <span class="about">≈</span>&nbsp;<?php echo "<span class=\"" . $collateralcolour["Evo"] . "\">" . $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . pretty($collateralvalue["Evo"][$fiat]["current"], 0); ?></span></i>
-		<div class="bubble" data-tippy-content="<?php echo str_replace(array("###", "§§§"), array($fiatcurrencies[$fiat]["symbol"], $fiatcurrencies[$fiat]["symbol"] . "&nbsp;" . number_format($currentprice[$fiat], 2)), $UItext["4000-worth-today"]); ?>">
-				<?php echo $UItext["today"]; ?>
-				<span class="info">ℹ️</span>
-		</div>
-	</div>
-</div>
-
-
-</td>
-</tr></table>
+		/* Keep the SVG visible long enough to qualify as a brief intro,
+		   then let CSS perform the opacity fade. */
+		animation.addEventListener('animationend', function () {
+			animation.hidden = true;
+		}, { once: true });
+	}
+})();
+</script>
 
 <script>
 	tippy('[data-tippy-content]', { maxWidth: 300, zIndex: 30000, placement: 'top', allowHTML: true });
