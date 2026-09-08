@@ -292,17 +292,6 @@ foreach ($collateralvalue as $type => $stuff) {
 		<!-- iOS -->
 		<link rel="apple-touch-icon" href="images/favicons/favicon-128-new.png" sizes="128x128">
 		<link rel="apple-touch-icon" href="images/favicons/favicon-192-new.png" sizes="192x192">
-		<script>
-		// localStorage.removeItem('dash-yield-theme');
-		(function () {
-			const key = 'dash-yield-theme';
-			const saved = localStorage.getItem(key);
-			const theme = saved || (window.matchMedia &&
-				window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-			// alert(theme);
-			document.documentElement.dataset.theme = theme;
-		})();
-		</script>
 		<link rel="stylesheet" href="<?php echo version_asset("style.css"); ?>" type="text/css">
 		<link rel="stylesheet" href="<?php echo version_asset("style-dark.css"); ?>" type="text/css">
 		<link rel="stylesheet" href="<?php echo version_asset("style-interactions.css"); ?>" type="text/css">
@@ -315,18 +304,18 @@ foreach ($collateralvalue as $type => $stuff) {
 	
 <body>
 
-<div id="visitAnimation" class="visit-animation" hidden aria-hidden="true">
+<div id="visitAnimation" class="visit-animation" hidden>
 	<img src="images/animation.svg" alt="" class="visit-animation-svg">
 </div>
 
 
 <img class="corner-art" src="images/Dash-yield-corner.png" alt="" aria-hidden="true">
-
+<h1 hidden>Dash Yield</h1>
 <main class="page-shell">
 
 	<header class="page-header">
-	
 		<section class="brand-panel">
+			<h2 hidden>Dash</h2>
 			<a class="refresh brand-link" href="./">
 				<span class="banner">LIVE</span>
 				<img src="images/dash_digitalcash.png"
@@ -339,6 +328,7 @@ foreach ($collateralvalue as $type => $stuff) {
 		</section>
 
 		<section class="intro-panel">
+			<h2 hidden>About Dash</h2>
 			<p class="small intro-text">
 				<?php echo str_replace("###", (string) floor((time() - strtotime("2014-01-18 00:00:00")) / (365 * 24 * 60 * 60)), boldify($UItext["proven-crypto"], "Roboto")); ?>
 				<?php echo boldify($UItext["servers"], "Roboto"); ?>
@@ -349,6 +339,7 @@ foreach ($collateralvalue as $type => $stuff) {
 		</section>
 
 		<section class="meta-panel">
+			<h2 hidden>Notice</h2>
 			<p class="smaller">
 				<?php echo str_replace("###", "<span class=\"Roboto-bold\">" . $fmt->format(time()) . "</span>", $UItext["page-refreshed"]) . $timezonemention; ?>.
 			</p>
@@ -369,7 +360,7 @@ foreach ($collateralvalue as $type => $stuff) {
 	</header>
 
 	<section class="utility-row">
-
+		<h2 hidden>Settings</h2>
 		<!-- SETTINGS box ================================= -->
 		<div class="box utility-box">
 			<div class="subtitle subsubtitle"><span class="bold">⚙️</span> <?php echo $UItext["settings"]; ?></div>
@@ -382,7 +373,7 @@ foreach ($collateralvalue as $type => $stuff) {
 				<select class="menu" name="lang" id="langselect" onChange="changelang();"><?php echo implode("", $langoptions); ?></select>
 			</div>
 			<div class="control-row">
-				<label for="timescale"><?php echo $UItext["timescale"]; ?>&nbsp;:</label>
+				<label for="timescaleselect"><?php echo $UItext["timescale"]; ?>&nbsp;:</label>
 				<select class="menu" name="timescale" id="timescaleselect" onChange="changetimescale();"><option class="menu" value="yearly"<?php if (array_key_exists("yearly", $timescaleselected)) echo $timescaleselected["yearly"]; ?>><?php echo $UItext["yearly"]; ?></option><option class="menu" value="monthly"<?php if (array_key_exists("monthly", $timescaleselected)) echo $timescaleselected["monthly"]; ?>><?php echo $UItext["monthly"]; ?></option></select>
 			</div>
 		</div>
@@ -413,9 +404,10 @@ foreach ($collateralvalue as $type => $stuff) {
 	</section>
 
 	<section class="dashboard">
-
+		<h2 hidden>Dashboard</h2>
 	<!-- MARKET PRICE box ================================= -->
 		<article class="box metric-card market-card boxborder boxunfold">
+			<h2 hidden>Price</h2>
 			<div class="subtitle">
 				<span class="bold">📊</span>&nbsp;&nbsp;<?php echo $UItext["market-price"]; ?>
 				<div class="bubble" data-tippy-content="<?php echo $UItext["provided-CoinGecko"]; ?>, <?php echo $fmt->format($data["lastPrices"]["USD"]["time"]["timestamp"]); ?>.<br>(<?php echo $UItext["provided-Frankfurter"]; ?>, <?php echo $fmt->format($data["lastPrices"]["conversion_rates"]["now"]["time"]["timestamp"]); ?>.)">
@@ -430,6 +422,7 @@ foreach ($collateralvalue as $type => $stuff) {
 
 		<!-- YEARLY / MONTHLY EARNINGS box ================================= -->
 		<article class="box metric-card yearly-card boxborder boxunfold">
+			<h2 hidden>Earnings</h2>
 			<div class="subtitle">
 				<span class="bold">🗓️</span>&nbsp;&nbsp;<?php echo $UItext[$timescale . "-earnings"]; ?></span>
 				<div class="bubble" data-tippy-content="<?php echo $UItext["XKCD-functions"]; ?>">
@@ -441,6 +434,7 @@ foreach ($collateralvalue as $type => $stuff) {
 			<div class="node-grid">
 
 				<section class="node-card" data-tippy-content="<?php echo $UItext["MN-collateral"]; ?>" data-tippy-placement="top-start">
+					<h2 hidden>1 Masternode</h2>
 					<div class="node-title">
 						<span class="bold"><b><span id="MN-number">1</span> Masternode</b></span>
 						<span class="node-setting" data-tippy-content="<?php echo $UItext["MN-collateral-edit"]; ?>" data-tippy-placement="bottom"><?php echo $UItext["collateral"]; ?> <img alt="Đ" src="images/black-d-250.png" class="D dash-logo">
@@ -471,6 +465,7 @@ foreach ($collateralvalue as $type => $stuff) {
 
 				<!-- 1 Evonode ============ -->
 				<section class="node-card" data-tippy-content="<?php echo $UItext["Evo-collateral"]; ?>" data-tippy-placement="top-start">
+					<h2 hidden>1 Evonode</h2>
 					<div class="node-title">
 						<span class="bold"><b><span id="Evo-number">1</span> Evonode</b></span>
 						<span class="node-setting" data-tippy-content="<?php echo $UItext["Evo-collateral-edit"]; ?>" data-tippy-placement="bottom"><?php echo $UItext["collateral"]; ?> <img alt="Đ" src="images/black-d-250.png" class="D dash-logo">
@@ -507,6 +502,7 @@ foreach ($collateralvalue as $type => $stuff) {
 		
 		<!-- ONE-YEAR-AGO SIMULATION box ================================= -->
 		<article class="box historical-card boxborder boxunfold">
+			<h2 hidden>Simulation</h2>
 			<div class="subtitle">
 				<span class="bold">🧮</span>&nbsp;&nbsp;“<?php echo str_replace("<br>", "", $UItext["earnings-1-year-ago"]); ?>”
 				<div class="bubble" data-tippy-content="<?php echo $UItext["way-to-estimate"]; ?>">
@@ -602,74 +598,6 @@ foreach ($collateralvalue as $type => $stuff) {
 	</section>
 
 </main>
-
-<script>
-(function () {
-	'use strict';
-
-	const THEME_KEY = 'dash-yield-theme';
-	const VISIT_KEY = 'dash-yield-last-visit';
-	const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
-
-	const root = document.documentElement;
-	const toggle = document.getElementById('themeToggle');
-	const toggleIcon = toggle ? toggle.querySelector('.theme-icon') : null;
-	const toggleText = toggle ? toggle.querySelector('.theme-toggle-text') : null;
-
-	function setTheme(theme, persist) {
-		const isDark = theme === 'dark';
-		root.dataset.theme = isDark ? 'dark' : 'light';
-
-		if (persist) {
-			localStorage.setItem(THEME_KEY, isDark ? 'dark' : 'light');
-		}
-
-		if (toggle) {
-			toggle.setAttribute('aria-pressed', String(isDark));
-			toggle.setAttribute(
-				'aria-label',
-				isDark ? '<?php echo $UItext["switchlightmode"]; ?>' : '<?php echo $UItext["switchdarkmode"]; ?>'
-			);
-		}
-		if (toggleIcon) toggleIcon.textContent = isDark ? '☀' : '☾';
-		if (toggleText) toggleText.textContent = isDark ? '<?php echo $UItext["daymode"]; ?>' : '<?php echo $UItext["nightmode"]; ?>';
-	}
-
-	/* The inline script in <head> already selected the initial theme:
-	   explicit visitor choice > OS preference > light. */
-	setTheme(root.dataset.theme || 'light', false);
-
-	if (toggle) {
-		toggle.addEventListener('click', function () {
-			setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark', true);
-		});
-	}
-
-	/* Show the intro animation only for a first visit, or after >48 h.
-	   localStorage is deliberately used: a returning visitor on the same
-	   browser/device keeps their visit timestamp. */
-	const now = Date.now();
-	const previousVisit = Number(localStorage.getItem(VISIT_KEY) || 0);
-
-	const WORK_MODE = false;
-	
-	const shouldShow = WORK_MODE
-		? true
-		: (!previousVisit || (now - previousVisit > FORTY_EIGHT_HOURS));
-	localStorage.setItem(VISIT_KEY, String(now));
-
-	const animation = document.getElementById('visitAnimation');
-	if (shouldShow && animation) {
-		animation.hidden = false;
-
-		/* Keep the SVG visible long enough to qualify as a brief intro,
-		   then let CSS perform the opacity fade. */
-		animation.addEventListener('animationend', function () {
-			animation.hidden = true;
-		}, { once: true });
-	}
-})();
-</script>
 
 <script>
 	tippy('[data-tippy-content]', { maxWidth: 300, zIndex: 30000, placement: 'top', allowHTML: true });
